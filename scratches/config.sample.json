@@ -1,0 +1,260 @@
+{
+    "services": [
+        {
+            "name": "Nëya",
+            "appIdentifier": "neya",
+            "port": "",
+            "watcher": "sentry",
+            "models": [
+                {
+                    "name": "user",
+                    "tableName": "users",
+                    "maintainChangelogs": true,
+                    "columns": [
+                        {
+                            "name": "fname",
+                            "identifier": "firstName",
+                            "type": "string",
+                            "updatable": true,
+                            "default": ""
+                        },
+                        {
+                            "name": "lname",
+                            "identifier": "lastName",
+                            "type": "string",
+                            "updatable": true,
+                            "default": ""
+                        },
+                        {
+                            "name": "email",
+                            "identifier": "email",
+                            "type": "email",
+                            "unique": "true",
+                            "index": true,
+                            "updatable": true,
+                            "default": ""
+                        },
+                        {
+                            "name": "phone_no",
+                            "identifier": "phoneNumber",
+                            "type": "phone",
+                            "unique": "true",
+                            "index": true,
+                            "updatable": true,
+                            "default": ""
+                        },
+                        {
+                            "name": "alt_email",
+                            "identifier": "email",
+                            "type": "email",
+                            "updatable": true,
+                            "nullable": true,
+                            "default": ""
+                        },
+                        {
+                            "name": "alt_phone_no",
+                            "identifier": "phoneNumber",
+                            "type": "phone",
+                            "updatable": true,
+                            "nullable": true,
+                            "default": ""
+                        },
+                        {
+                            "name": "status",
+                            "type": "boolean",
+                            "updatable": true,
+                            "default": ""
+                        },
+                        {
+                            "name": "custom_data",
+                            "identifier": "customData",
+                            "type": "json",
+                            "updatable": true,
+                            "default": ""
+                        }
+                    ],
+                    "housekeeping": [
+                        "uuid",
+                        "createdAt",
+                        "createdByUser",
+                        "createdByAPI",
+                        "updatedAt",
+                        "updatedByUser",
+                        "updatedByAPI",
+                        "deletedAt",
+                        "deletedByUser",
+                        "deletedByAPI"
+                    ],
+                    "relations": [
+                        {
+                            "name": "user_mananger_mapping",
+                            "field": "manager",
+                            "column": "manager_id",
+                            "references": "user.id",
+                            "onDelete": "restrict",
+                            "onUpdate": "cascade"
+                        }
+                    ],
+                    "constraints": []
+                },
+                {
+                    "name": "api_keys",
+                    "tableName": "apiKeys",
+                    "maintainChangelogs": true,
+                    "columns": [
+                        {
+                            "name": "identifier",
+                            "type": "string",
+                            "updatable": true,
+                            "default": ""
+                        },
+                        {
+                            "name": "authClientKey",
+                            "type": "string",
+                            "default": ""
+                        },
+                        {
+                            "name": "authClientSecretHash",
+                            "type": "string",
+                            "default": "",
+                            "func": "hash"
+                        },
+                        {
+                            "name": "status",
+                            "type": "boolean",
+                            "updatable": true,
+                            "default": ""
+                        },
+                        {
+                            "name": "custom_data",
+                            "identifier": "customData",
+                            "type": "json",
+                            "updatable": true,
+                            "default": ""
+                        }
+                    ],
+                    "relations": [],
+                    "constraints": {
+                        "unique": [
+                            "identifier",
+                            "$createdBy"
+                        ]
+                    }
+                }
+            ],
+            "endpoints": [
+                {
+                    "name": "users",
+                    "description": "Users",
+                    "actions": [
+                        {
+                            "method": "get",
+                            "route": "/",
+                            "payload": [],
+                            "response": [
+                                "uuid",
+                                "firstName",
+                                "lastName",
+                                "email",
+                                "phoneNumber",
+                                "customData",
+                                "status"
+                            ]
+                        },
+                        {
+                            "method": "get",
+                            "route": "/:uid",
+                            "payload": [],
+                            "response": [
+                                "uuid",
+                                "firstName",
+                                "lastName",
+                                "email",
+                                "phoneNumber",
+                                "customData",
+                                "status"
+                            ]
+                        },
+                        {
+                            "method": "post",
+                            "route": "/",
+                            "payload": "$ajvSchema",
+                            "transformer": [
+                                {
+                                    "source": "name",
+                                    "target": "user.firstName",
+                                    "t": "{ return item.split(' ')[0]}"
+                                },
+                                {
+                                    "source": "name",
+                                    "target": "user.lastName",
+                                    "t": "{ return item.split(' ').slice([1-]).join(' ')}"
+                                },
+                                {
+                                    "source": "email",
+                                    "target": "user.email"
+                                },
+                                {
+                                    "source": "phone_no",
+                                    "target": "user.phoneNumber"
+                                }
+                            ],
+                            "response": [
+                                "user.uuid",
+                                "user.firstName",
+                                "user.lastName",
+                                "user.email",
+                                "user.phoneNumber",
+                                "user.customData",
+                                "user.status"
+                            ]
+                        }
+                    ],
+                    "endpoints": [
+                        {
+                            "name": ":userUUID/apiKeys",
+                            "description": "Manage API Keys",
+                            "actions": [
+                                {
+                                    "method": "post",
+                                    "route": "/",
+                                    "payload": [
+                                        "name"
+                                    ],
+                                    "transformer": [
+                                        {
+                                            "source": "name",
+                                            "target": "apiKey.name"
+                                        },
+                                        {
+                                            "target": "apiKey.authClientSecretHas",
+                                            "t": "{ return new Hash()}",
+                                            "dep": "Hash"
+                                        },
+                                        {
+                                            "target": "apiKey.AuthClientKey",
+                                            "t": "{ return new Hash()}",
+                                            "dep": "Hash"
+                                        }
+                                    ],
+                                    "response": [
+                                        "apiKey.name",
+                                        "apiKey.authClientKey",
+                                        "apiKey.authClientSecretHash",
+                                        "apiKey.customData",
+                                        "apiKey.createdAt",
+                                        "apiKey.createdBy.firstName",
+                                        "apiKey.createdBy.lastName"
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "authorization": "rbac",
+            "authentication": {},
+            "prefixTableNameWithAppIdentifier": true
+        }
+    ]
+}
